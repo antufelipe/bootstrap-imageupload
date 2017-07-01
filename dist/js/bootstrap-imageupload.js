@@ -13,14 +13,14 @@ if (typeof jQuery === 'undefined') {
     'use strict';
 
     var options = {};
-
+    var language = {};
     var methods = {
         init: init,
         disable: disable,
         enable: enable,
         reset: reset
     };
-
+   
     // -----------------------------------------------------------------------------
     // Plugin Definition
     // -----------------------------------------------------------------------------
@@ -36,10 +36,24 @@ if (typeof jQuery === 'undefined') {
                 methods.init.apply($(this), givenArguments);
             }
             else {
-                throw new Error('Method "' + methodOrOptions + '" is not defined for imageupload.');
+                throw new Error(language.MethodError.replace('%methodOrOptions%', methodOrOptions));
             }
         });
     };
+    $.fn.imageupload.language = {
+        MethodError: 'Method %methodOrOptions% is not defined for imageupload.',
+        AltImage: 'Image preview',
+        changeButton: 'Change',
+        browseButton : 'Browse',
+        errorMessageFileSize: 'File is too large (max ',
+        errorMessageFileFormat: 'File type is not allowed.',
+        successMessageFileFormat: 'Image file is valid.',
+        successMessageURLFormat: 'Image URL is valid.',
+        errorMessageFileNotFound: 'Image could not be found.',
+        errorMessageFileTimeOut: 'Loading image timed out.',
+        errorMessageLoadingImage: 'Error loading image file.',
+        errorMessageEnterURL: 'Please enter an image URL.'
+    }
 
     $.fn.imageupload.defaultOptions = {
         allowedFormats: [ 'jpg', 'jpeg', 'png', 'gif' ],
@@ -54,6 +68,7 @@ if (typeof jQuery === 'undefined') {
 
     function init(givenOptions) {
         options = $.extend({}, $.fn.imageupload.defaultOptions, givenOptions);
+        language = $.extend({}, $.fn.imageupload.language, givenOptions);
 
         var $imageupload = this;
         var $fileTab = $imageupload.find('.file-tab');
@@ -140,7 +155,7 @@ if (typeof jQuery === 'undefined') {
     }
 
     function getImageThumbnailHtml(src) {
-        return '<img src="' + src + '" alt="Image preview" class="thumbnail" style="max-width: ' + options.maxWidth + 'px; max-height: ' + options.maxHeight + 'px">';
+        return '<img src="' + src + '" alt="' + language.AltImage + '" class="thumbnail" style="max-width: ' + options.maxWidth + 'px; max-height: ' + options.maxHeight + 'px">';
     }
 
     function getFileExtension(path) {
@@ -151,17 +166,17 @@ if (typeof jQuery === 'undefined') {
         // Check file size.
         if (file.size / 1024 > options.maxFileSizeKb)
         {
-            callback(false, 'File is too large (max ' + options.maxFileSizeKb + 'kB).');
+            callback(false, language.errorMessageFileSize + options.maxFileSizeKb + 'kB).');
             return;
         }
 
         // Check image format by file extension.
         var fileExtension = getFileExtension(file.name);
         if ($.inArray(fileExtension, options.allowedFormats) > -1) {
-            callback(true, 'Image file is valid.');
+            callback(true, language.successMessageFileFormat);
         }
         else {
-            callback(false, 'File type is not allowed.');
+            callback(false, language.errorMessageFileFormat);
         }
     }
 
@@ -184,10 +199,10 @@ if (typeof jQuery === 'undefined') {
                 // Check image format by file extension.
                 var fileExtension = getFileExtension(tempUrl);
                 if ($.inArray(fileExtension, options.allowedFormats) > -1) {
-                    callback(true, 'Image URL is valid.');
+                    callback(true, language.successMessageURLFormat);
                 }
                 else {
-                    callback(false, 'File type is not allowed.');
+                    callback(false, language.errorMessageFileFormat);
                 }
             }
         };
@@ -195,7 +210,7 @@ if (typeof jQuery === 'undefined') {
         image.onerror = function() {
             if (!timeout) {
                 window.clearTimeout(timer);
-                callback(false, 'Image could not be found.');
+                callback(false, language.errorMessageFileNotFound);
             }
         };
 
@@ -205,7 +220,7 @@ if (typeof jQuery === 'undefined') {
         timer = window.setTimeout(function() {
             timeout = true;
             image.src = '???'; // Trigger error to stop loading.
-            callback(false, 'Loading image timed out.');
+            callback(false, language.errorMessageFileTimeOut);
         }, timeoutMs);
     }
 
@@ -230,7 +245,7 @@ if (typeof jQuery === 'undefined') {
     function resetFileTab($fileTab) {
         $fileTab.find('.alert').remove();
         $fileTab.find('img').remove();
-        $fileTab.find('.btn span').text('Browse');
+        $fileTab.find('.btn span').text(language.browseButton);
         $fileTab.find('.btn:eq(1)').hide();
         $fileTab.find('input').val('');
     }
@@ -242,7 +257,7 @@ if (typeof jQuery === 'undefined') {
         
         $fileTab.find('.alert').remove();
         $fileTab.find('img').remove();
-        $browseFileButton.find('span').text('Browse');
+        $browseFileButton.find('span').text(language.browseButton);
         $removeFileButton.hide();
 
         // Check if file was uploaded.
@@ -261,12 +276,12 @@ if (typeof jQuery === 'undefined') {
                 fileReader.onload = function(e) {
                     // Show thumbnail and remove button.
                     $fileTab.prepend(getImageThumbnailHtml(e.target.result));
-                    $browseFileButton.find('span').text('Change');
+                    $browseFileButton.find('span').text(language.changeButton);
                     $removeFileButton.css('display', 'inline-block');
                 };
 
                 fileReader.onerror = function() {
-                    $fileTab.prepend(getAlertHtml('Error loading image file.'));
+                    $fileTab.prepend(getAlertHtml(language.errorMessageLoadingImage));
                     $fileInput.val('');
                 };
 
@@ -274,7 +289,7 @@ if (typeof jQuery === 'undefined') {
             }
             else {
                 $fileTab.prepend(getAlertHtml(message));
-                $browseFileButton.find('span').text('Browse');
+                $browseFileButton.find('span').text(language.browseButton);
                 $fileInput.val('');
             }
 
@@ -318,7 +333,7 @@ if (typeof jQuery === 'undefined') {
 
         var url = $urlInput.val();
         if (!url) {
-            $urlTab.prepend(getAlertHtml('Please enter an image URL.'));
+            $urlTab.prepend(getAlertHtml(language.errorMessageEnterURL));
             return;
         }
 
